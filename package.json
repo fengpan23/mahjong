@@ -1,0 +1,20 @@
+{
+  "name": "mahjong",
+  "version": "1.0.0",
+  "description": "game mahjong",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mahjong",
+    "game"
+  ],
+  "author": "fengpan",
+  "license": "ISC",
+  "dependencies": {
+    "underscore": "^1.8.3",
+    "log": "https://github.com/fengpan23/log.git",
+    "server": "git+https://pan.feng:fengpan123@gitlab.stargt.com.my/pan.feng/server.git"
+  }
+}
