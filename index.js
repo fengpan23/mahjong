@@ -13,8 +13,8 @@ class Index {
 
     init(request) {
         Log.info('... api init ...');
-
-        this._server.login(request).then(player => {
+        let player = this._server.players.get(request.clientId);
+        this._server.login(player, {session: request.getParams('content.session')}).then(player => {
             let table = this._server.get('table');
             let game = {};
             game.balance = player.get('point');
@@ -28,8 +28,8 @@ class Index {
         });
     };
 
-    userjoin(request, player) {
-        Log.info('... api user join ....');
+    seat(request, player) {
+        Log.info('... api seat ....');
 
         let table = this._server.get('table');
         let min = table.minbuy || table.minbet * (20 * 4 + 10);
@@ -38,10 +38,9 @@ class Index {
             return request.error('insufficient_fund', point);
 
         this._server.seat(player).then(player => {
-            let kiosk = player.get('kiosk');
             let user = {
-                kid: kiosk.id,
-                name: player.get('username'),
+                kid: player.id,
+                name: player.username,
                 point: player.get('point'),
                 seatindex: player.index,
                 state: 1
@@ -207,10 +206,15 @@ class Index {
         request.close();
     };
 
-    disconnect(request) {
-        if(!request.seatindex())return request.close();
-        console.info(request.seatindex() + ' client disconnect !!!');
-        this.userquit(request);
+    disconnect(player) {
+        Log.info('... api disconnect ...');
+        this._server.quit(player).then(() => {
+            let data = {index: player.index, state: 2};
+            console.log('data', data);
+            this._server.broadcast('quit', {game: data});
+        }).catch(e => {
+            Log.error('disconnect player quit error: ', e);
+        });
     };
 
     exit() {
