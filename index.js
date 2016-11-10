@@ -37,7 +37,7 @@ class Index {
         if (point < min)
             return request.error('insufficient_fund', point);
 
-        this._server.seat(player).then(player => {
+        this._server.seat(player).then(p => {
             let user = {
                 kid: player.id,
                 name: player.username,
@@ -54,8 +54,8 @@ class Index {
             });
             request.close();
         }).catch(e => {
-            request.error();
-            Log.error('user join error: ', e);
+            request.error(e.code, e.message);
+            Log.error('user seat error: ', e);
         });
     };
 
@@ -211,7 +211,7 @@ class Index {
         this._server.quit(player).then(() => {
             let data = {index: player.index, state: 2};
             console.log('data', data);
-            this._server.broadcast('quit', {game: data});
+            this._server.broadcast('disconnect', {game: data});
         }).catch(e => {
             Log.error('disconnect player quit error: ', e);
         });

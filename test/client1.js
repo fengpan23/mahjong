@@ -11,7 +11,7 @@ class Client{
 
         client.on('connected', function () {
             console.log('client connected !!!');
-            client.send(0, "init", {tableid: tableID, gameid: gameID, session: session});
+            client.send(0, "init", {tableid: tableID, gameid: gameID, id: 205});
             readline(client);
         }).on('init', function (data) {
             console.log('on init: ', data);
@@ -21,8 +21,8 @@ class Client{
             // client.send(0, 'userjoin', {seatindex: 1, auto: 1});
         }).on('error', error => {
             console.log('client error: ', error);
-        }).on('disconnect', () => {
-            console.log('client disconnect');
+        }).on('disconnect', data => {
+            console.log('client disconnect', data);
         });
 
         function readline(cli){

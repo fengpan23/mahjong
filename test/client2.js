@@ -4,14 +4,14 @@ const ReadLine = require('readline');
 
 const rl = ReadLine.createInterface({input: process.stdin, output: process.stdout});
 
-let tableID = 67, gameID = '1000009', port = 50220, session = 14;
+let tableID = 67, gameID = '1000009', port = 50220, session = 'gxieweiefW8CcbEIBkQ2pC32X6mmNCcE';
 class Client{
     constructor() {
         let client = Connect.createClient(port);
 
         client.on('connected', function () {
             console.log('client connected !!!');
-            client.send(0, "init", {tableid: tableID, gameid: gameID, session: session});
+            client.send(0, "init", {tableid: tableID, gameid: gameID, id: 208});
             readline(client);
         }).on('init', function (data) {
             console.log('on init: ', data);
