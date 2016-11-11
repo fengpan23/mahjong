@@ -50,6 +50,10 @@ class Index {
             request.broadcast('user', user);
             request.once('afterClose', () => {
                 // game.join(sid);
+                // if(this._server.players.size === table.maxkiosk);
+                if(this._server.players.size === 2){
+                    this._start();
+                }
                 // timer.start(match.timeout.ready, null, '' + sid);
             });
             request.close();
@@ -61,8 +65,10 @@ class Index {
 
     _start(){
         this._server.open().then(players => {
-
-        }).catch();
+            console.log(players);
+        }).catch(e => {
+            Log.error('game open error !', e);
+        });
     }
 
     /**
@@ -210,7 +216,6 @@ class Index {
         Log.info('... api disconnect ...');
         this._server.quit(player).then(() => {
             let data = {index: player.index, state: 2};
-            console.log('data', data);
             this._server.broadcast('disconnect', {game: data});
         }).catch(e => {
             Log.error('disconnect player quit error: ', e);
