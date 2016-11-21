@@ -8,7 +8,9 @@ const Server = require('server');
 
 class Index {
     constructor() {
-        this._server = new Server({tableId: 220, api: this});
+        this._server = new Server({tableId: 270, api: this});
+
+        this._deposit = this._server.createModule('deposit');
     };
 
     init(request) {
@@ -28,8 +30,8 @@ class Index {
         });
     };
 
-    seat(request, player) {
-        Log.info('... api seat ....');
+    userjoin(request, player) {
+        Log.info('... api user join ....');
 
         let table = this._server.get('table');
         let min = table.minbuy || table.minbet * (20 * 4 + 10);
@@ -37,8 +39,10 @@ class Index {
         if (point < min)
             return request.error('insufficient_fund', point);
 
-        this._server.seat(player).then(p => {
-            let user = {
+        this._deposit.buy(player, min).then(() => {
+            this._server.seat(player)
+        }).then(p => {
+                let user = {
                 kid: player.id,
                 name: player.username,
                 point: player.get('point'),
@@ -46,6 +50,7 @@ class Index {
                 state: 1
                 // readytimeout: match.timeout.ready
             };
+
             request.response('user', user);
             request.broadcast('user', user);
             request.once('afterClose', () => {
@@ -58,8 +63,8 @@ class Index {
             });
             request.close();
         }).catch(e => {
-            request.error(e.code, e.message);
             Log.error('user seat error: ', e);
+            request.error(e.code, e.message);
         });
     };
 
