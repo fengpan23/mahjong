@@ -39,29 +39,29 @@ class Index {
         if (point < min)
             return request.error('insufficient_fund', point);
 
-        this._deposit.buy(player, min).then(() => {
-            this._server.seat(player)
-        }).then(p => {
+        this._deposit.buy(player, min).then(balance => {
+            console.log('buy in balance: ', balance);
+            return this._server.seat(player).then(seatIndex => {
                 let user = {
-                kid: player.id,
-                name: player.username,
-                point: player.get('point'),
-                seatindex: player.index,
-                state: 1
-                // readytimeout: match.timeout.ready
-            };
+                    kid: player.id,
+                    name: player.username,
+                    point: balance,
+                    seatindex: seatIndex,
+                    state: 1
+                    // readytimeout: match.timeout.ready
+                };
 
-            request.response('user', user);
-            request.broadcast('user', user);
-            request.once('afterClose', () => {
-                // game.join(sid);
-                // if(this._server.players.size === table.maxkiosk);
-                if(this._server.players.size === 2){
-                    this._start();
-                }
+                request.response('user', user);
+                request.broadcast('user', user);
+                request.once('afterClose', () => {
+                    // game.join(sid);
+                    // if(this._server.players.size === table.maxkiosk);
+                    if (this._server.players.size === 2)
+                        this._start();
+                });
                 // timer.start(match.timeout.ready, null, '' + sid);
+                request.close();
             });
-            request.close();
         }).catch(e => {
             Log.error('user seat error: ', e);
             request.error(e.code, e.message);
@@ -219,7 +219,7 @@ class Index {
 
     disconnect(player) {
         Log.info('... api disconnect ...');
-        this._server.quit(player).then(() => {
+        this._server.quit(player).then(p => {
             let data = {index: player.index, state: 2};
             this._server.broadcast('disconnect', {game: data});
         }).catch(e => {
