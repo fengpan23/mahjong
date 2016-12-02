@@ -10,7 +10,7 @@ class Index {
     constructor() {
         this._server = new Server({tableId: 270, api: this});
 
-        this._deposit = this._server.createModule('deposit');
+        this._deposit = this._server.getModule('deposit');
     };
 
     init(request) {
@@ -40,7 +40,6 @@ class Index {
             return request.error('insufficient_fund', point);
 
         this._deposit.buy(player, min).then(balance => {
-            console.log('buy in balance: ', balance);
             return this._server.seat(player).then(seatIndex => {
                 let user = {
                     kid: player.id,
@@ -51,7 +50,20 @@ class Index {
                     // readytimeout: match.timeout.ready
                 };
 
+                let players = {};
+                this._server.players.forEach(p => {
+                    if(p.id !== player.id){
+                        players[p.index] = {
+                            name: p.username,
+                            point: p.balance,
+                            state: 1,
+                            seatindex: p.index
+                        }
+                    }
+                });
+
                 request.response('user', user);
+                request.response('players', players);
                 request.broadcast('user', user);
                 request.once('afterClose', () => {
                     // game.join(sid);
@@ -68,9 +80,30 @@ class Index {
         });
     };
 
-    _start(){
+    _start() {
         this._server.open().then(players => {
-            console.log(players);
+            return this._server.close();
+            // let dies = handle.throwdie(3);  //throw 3 die
+            // let dirmap = game.randomeast(dies[0]);    //get east
+            // let sta = dies[1] + dies[2];
+            //
+            // this.server.engine.kioskmatchopen(req).then(() => {
+            //     client.session.state = 3;   //state(-1: auto, 0: no ready, 1: ready, 2: quit, 3: in the game)
+            //     req.once('afterclose', resolve);
+            //     req.close();
+            // }).catch(() => {
+            //     req.close();
+            //     reject(client.seatindex);
+            // })
+
+        }).then(() => {
+            // game.shuffle();   //new game shuffle cards
+            // this._dealcards(sta, {
+            //     die: handle.dealdie(dies),
+            //     dirmap: dirmap,
+            //     actionseatindex: game.getindex('east'),
+            //     actiontimeout: match.timeout.discard
+            // });
         }).catch(e => {
             Log.error('game open error !', e);
         });

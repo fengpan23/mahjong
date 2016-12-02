@@ -4,19 +4,20 @@ const ReadLine = require('readline');
 
 const rl = ReadLine.createInterface({input: process.stdin, output: process.stdout});
 
-let port = 50221, session = 'gxieweiefW8CcbEIBkQ2pC32X6mmNCcE';
+// let port = 50221, session = 'gxieweiefW8CcbEIBkQ2pC32X6mmNCcE';
+let port = 50270, session = 'gxieweiefW8CcbEIBkQ2pC32X6mmNCcE';
 class Client{
     constructor() {
         let client = Connect.createClient(port);
 
         client.on('connected', function () {
             console.log('client connected !!!');
-            client.send(0, "init", {id: 208});
+            client.send(0, "init", {id: 206});
             readline(client);
         }).on('init', function (data) {
             console.log('on init: ', data);
-            client.send(0, 'seat', {seatindex: 1, auto: 1});
-        }).on('seat', function (data) {
+            client.send(0, 'userjoin', {seatindex: 1, auto: 1});
+        }).on('userjoin', function (data) {
             console.log('seat: ', data);
             // client.send(0, 'userjoin', {seatindex: 1, auto: 1});
         }).on('error', error => {

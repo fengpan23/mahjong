@@ -4,7 +4,8 @@ const ReadLine = require('readline');
 
 const rl = ReadLine.createInterface({input: process.stdin, output: process.stdout});
 
-let tableID = 67, gameID = '1000009', port = 50067, session = 13;
+let tableID = 270, gameID = '1000009', port = 50270, session = 13;
+// let tableID = 67, gameID = '1000009', port = 50067, session = 13;
 class Client{
     constructor() {
         let client = Connect.createClient(port);
@@ -17,10 +18,11 @@ class Client{
             console.log('on init: ', data);
             client.send(0, 'userjoin', {seatindex: 1, auto: 1});
         }).on('userjoin', function (data) {
+            // client.send(0, 'userjoin', {s }).on('userjoin', function (data) {
             console.log('seat: ', data);
             // client.send(0, 'userjoin', {seatindex: 1, auto: 1});
-        }).on('error', error => {
-            console.log('client error: ', error);
+        }).on('broadcast_userjoin', error => {
+            console.log('userjoin: ', error);
         }).on('disconnect', data => {
             console.log('client disconnect', data);
         });
