@@ -12,7 +12,7 @@ class Client{
 
         client.on('connected', function () {
             console.log('client connected !!!');
-            client.send(0, "init", {id: 206});
+            client.send(0, "init", {id: 224});
             readline(client);
         }).on('init', function (data) {
             console.log('on init: ', data);

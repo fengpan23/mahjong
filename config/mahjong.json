@@ -1,0 +1,62 @@
+{
+    "fly": true,
+    "card": {
+        "D": {
+            "number": 4,
+            "cards": {"D1": "一筒", "D2": "二筒", "D3": "三筒", "D4": "四筒", "D5": "五筒", "D6": "六筒", "D7": "七筒", "D8": "八筒", "D9": "九筒"}
+        },
+        "W": {
+            "number": 4,
+            "cards": {"W1": "东风", "W2": "南风", "W3": "西风", "W4": "北风"}
+        },
+        "S": {
+            "number": 4,
+            "cards": {"S1": "红中", "S2": "发财", "S3": "白板"}
+        },
+        "flower": {
+            "cards": {"C1": "猫", "C2": "鼠", "C3": "鸡", "C4": "蜈蚣", "F1": "梅", "F2": "兰", "F3": "竹", "F4": "菊", "F5": "春", "F6": "夏", "F7": "秋", "F8": "冬"}
+        },
+        "person": {"number": 2, "cards": {"C5": "男", "C6": "女"}},
+        "joker": {"number": 4, "cards": {"A1": "飞"}}
+    },
+    "points": {
+        "godWin": {"fan": 20, "cn": "天胡", "en": "godwin"},
+        "dieWin": {"fan": 20, "cn": "地胡", "en": "diewin"},
+        "clean": {"fan": 20, "cn": "门清吃胡－无花", "en": "clean"},
+        "fourQuads": {"fan": 20, "cn": "十八罗汉", "en": "fourquads"},
+        "fourDark": {"fan": 20, "cn": "四暗刻", "en": "fourdark"},
+        "bigFour": {"fan": 20, "cn": "大四喜", "en": "bigfour"},
+        "smallFour": {"fan": 20, "cn": "小四喜", "en": "smallfour"},
+        "bigThree": {"fan": 20, "cn": "大三元", "en": "bigthree"},
+        "allFont_bigThree": {"fan": 20, "cn": "字一色(大三元)", "en": "allfont_bigthree"},
+        "allFont_smallFour": {"fan": 20, "cn": "字一色(小四喜)", "en": "allfont_smallfour"},
+        "allFont_bigFour": {"fan": 20, "cn": "字一色(大四喜)", "en": "allfont_bigfour"},
+        "allFont": {"fan": 20, "cn": "字一色", "en": "allfont"},
+
+        "god_fourJoker": {"fan": 20, "cn": "天胡四飞", "en": "god_fourjoker"},
+        "jokerWin": {"fan": 20, "cn": "四飞", "en": "fourjoker"},
+
+        "smallThree": {"fan": 3, "cn": "小三元", "en": "smallthree"},
+
+        "allDouble": {"fan": 3, "cn": "碰碰胡", "en": "alldouble"},
+        "19double": {"fan": 4, "cn": "么九字－碰碰胡", "en": "19double"},
+
+        "allTong": {
+            "double": {"fan": 5, "cn": "全筒子－碰碰胡", "en": "double"},
+            "three": {"fan": 4, "cn": "全筒子－平胡", "en": "three"},
+            "other": {"fan": 3, "cn": "全筒子", "en": "other"}
+        },
+        "east": {"fan": 1, "cn": "东风", "en": "east"},
+        "south": {"fan": 1, "cn": "南风", "en": "south"},
+        "west": {"fan": 1, "cn": "西风", "en": "west"},
+        "north": {"fan": 1, "cn": "北风", "en": "north"},
+        "red": {"fan": 1, "cn": "红中", "en": "red"},
+        "green": {"fan": 1, "cn": "发财", "en": "green"},
+        "white": {"fan": 1, "cn": "白板", "en": "white"},
+        "flower": {"fan": 1, "cn": "花牌", "en": "flower"},
+        "kWin": {"fan": 1, "cn": "杠上胡", "en": "kwin"},
+        "fWin": {"fan": 1, "cn": "花上胡", "en": "fwin"},
+        "robWin": {"fan": 1, "cn": "抢杠胡", "en": "robwin"},
+        "win": {"fan": 1, "cn": "胡牌", "en": "win"}
+    }
+}

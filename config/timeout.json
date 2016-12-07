@@ -1,0 +1,9 @@
+{
+  "buy": 15,
+  "ready": 15,
+  "discard": 8,
+  "action": 5,
+  "repair": 1,
+  "start": 11,
+  "auto": 3
+}

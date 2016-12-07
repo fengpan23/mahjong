@@ -1,47 +1,44 @@
 "use strict";
-const Netclient = require('../../../server/lib/netclient.js');
-const common = require('../../../utils/common.js');
+const Connect = require('connect');
+const ReadLine = require('readline');
 
-var readline = require('readline');
+const rl = ReadLine.createInterface({input: process.stdin, output: process.stdout});
 
-var rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+// let port = 50221, session = 'gxieweiefW8CcbEIBkQ2pC32X6mmNCcE';
+let port = 50270, session = 'gxieweiefW8CcbEIBkQ2pC32X6mmNCcE';
+class Client{
+    constructor() {
+        let client = Connect.createClient(port);
 
-let tableID = 67, gameID = '1000009', port = 50067;
-function dominoClient(session, cb){
-    let client = new Netclient();
-    client.connect(port);
-    client.on('connected', function () {
-        client.on('request', function (id, event, data) {
-            console.log(`${event}   ${JSON.stringify(data)}\n`);
+        client.on('connected', function () {
+            console.log('client connected !!!');
+            client.send(0, "init", {id: 225});
+            readline(client);
+        }).on('init', function (data) {
+            console.log('on init: ', data);
+            client.send(0, 'userjoin', {seatindex: 1, auto: 1});
+        }).on('userjoin', function (data) {
+            console.log('seat: ', data);
+            // client.send(0, 'userjoin', {seatindex: 1, auto: 1});
+        }).on('error', error => {
+            console.log('client error: ', error);
+        }).on('disconnect', () => {
+            console.log('client disconnect');
         });
 
-        client.send(0, "init", {
-            tableid : tableID,
-            gameid : gameID,
-            session : session
-        });
+        function readline(cli){
+            rl.question(".............\n", function(aa) {
+                let tt = aa.split(' ');
+                let data = {};
+                let arr = tt[2] || '';
+                if(arr.indexOf('_') > 0)arr = arr.split('_');
+                data[tt[1]] = arr;
 
-        cb(client);
-    });
+                cli.send(0, tt[0], data);
+                action(cli);
+            });
+        }
+        client.connect({port: port});
+    }
 }
-
-new dominoClient('fp', function(client){
-    client.send(0, 'userjoin', {seatindex: 3, auto: 1});
-
-    function action(cli){
-        rl.question("......userpass, userfollow, useraddbet, userallin, userchange,  userfold.......\n", function(aa) {
-            let tt = aa.split(' ');
-            let data = {};
-            let arr = tt[2] || '';
-            if(arr.indexOf('_') > 0)arr = arr.split('_');
-            data[tt[1]] = arr;
-
-            cli.send(0, tt[0], data);
-            action(cli);
-        });
-    };
-    action(client);
-});
+new Client();

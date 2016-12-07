@@ -21,10 +21,12 @@ class Client{
             // client.send(0, 'userjoin', {s }).on('userjoin', function (data) {
             console.log('seat: ', data);
             // client.send(0, 'userjoin', {seatindex: 1, auto: 1});
+        }).on('dealcard', data => {
+            console.log('dealcard: ', data);
         }).on('broadcast_userjoin', error => {
             console.log('userjoin: ', error);
-        }).on('disconnect', data => {
-            console.log('client disconnect', data);
+        }).on('request', data => {
+            console.log('client request', data);
         });
 
         function readline(cli){
