@@ -11,7 +11,7 @@ const Server = require('server');
 
 class Index {
     constructor() {
-        this._server = new Server({tableId: 270, api: this});
+        this._server = new Server({tableId: 57, api: this});
 
         this._deposit = this._server.getModule('deposit');
 
