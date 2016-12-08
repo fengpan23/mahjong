@@ -113,10 +113,9 @@ let type = {
             let double = false;
             for(let m of members){
                 if(cards[m] && cards[m].length > 2){
-                    continue;
+
                 }else if(!double && cards[m] && cards[m].length === 2){
                     double = true;
-                    continue;
                 }else{
                     return false;
                 }
@@ -165,10 +164,9 @@ let type = {
         let double = false;
         for(let m of members){
             if(cards[m] && cards[m].length > 2){
-                continue;
+
             }else if(!double && cards[m] && cards[m].length === 2){
                 double = true;
-                continue;
             }else{
                 return false;
             }
@@ -477,18 +475,3 @@ let hCards = ['W1', 'W1', 'W2', 'W2', 'W2', 'W3', 'W3', 'W3', 'W4', 'W4', 'W4'];
 let bCards = ['W1', 'W1' , 'W1'];
 let addition = {gCard: 'D4', fCards: [ [ 'A6', 'F2', 'A8' ], [ 'A2' ], [ 'A3' ], [ 'A1' ], [ 'F5' ] ], dir: 'south' };
 console.log(fan({wCards: hCards}, bCards, addition));
-
-//大四喜
-//let cards = ['W1', 'W1', 'W1','W2', 'W2', 'W2', 'W3', 'W3', 'W3', 'W4', 'W4', 'W4', 'D2', 'D2'];
-
-//十八罗汉
-//let cards = ['W1', 'W1', 'W1', 'W1', 'W2','W2', 'W2', 'W2', 'W3', 'W3', 'W3', 'W3', 'W4', 'W4', 'W4', 'W4'];
-
-//小四喜
-//let cards = ['W1', 'W1', 'W2', 'W2', 'W2', 'W3', 'W3', 'W3', 'W4', 'W4', 'W4'];
-
-//大三元   bigThree
-//let cards = ['S1', 'S1', 'S1', 'S2', 'S2', 'S2', 'S3','S3', 'S3', 'D2', 'D2'];
-
-//小三元   smallThree
-//let cards = ['S1', 'S1', 'S1', 'S2', 'S2', 'S2', 'S3','S3', 'S3', 'D2', 'D2', 'D3', 'D3'];

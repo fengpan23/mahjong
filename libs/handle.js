@@ -66,9 +66,9 @@ function jackThree(cards, jacks, map){
     return ca.length === 0 && three;
 }
 
-function fontThree(fcards, jacks, map){
-    if(!fcards || fcards.length === 0)return {three: [], jacks: jacks};
-    let cards = _.groupBy(fcards), three = [], mend;
+function fontThree(fCards, jacks, map){
+    if(!fCards || fCards.length === 0)return {three: [], jacks: jacks};
+    let cards = _.groupBy(fCards), three = [], mend;
     for(let c in cards) {
         mend = (6 - cards[c].length) % 3;
         jacks -= mend;
@@ -103,7 +103,7 @@ handle.sort = function (cards) {
  * throw die
  * @param pcs die number
  */
-handle.throwdie = function(pcs){
+handle.throwDie = function(pcs){
     if(pcs){
         this.die = [];
         for(let i = 0; i < pcs; i++){
@@ -129,23 +129,25 @@ handle.dealDie = function (die) {
 
 /**
  * get card  self can do action
- * @param hCards    hand cards
- * @param bCards    bright cards（吃，杠， 碰的牌）
- * @param gcard    get card
- * @returns {win: boolean, kong: Array, bkong: Array}
+ * @param options    {Object}
+ * options.hCards    hand cards
+ * options.bCards    bright cards（吃，杠， 碰的牌）
+ * options.gCard    get card
+ * options.omit    omit win         if true 只能胡
+ * @returns {Object}    {win: boolean, kong: Array, bKong: Array}
  */
 handle.selfCanDo = function(options){
     let doGroup = {};
-    let doCards = options.hCards.concat(options.gcard).filter(Boolean);
-    doGroup.win = this.win(doCards.sort(), null, options.jokerwin);
+    let doCards = options.hCards.concat(options.gCard).filter(Boolean);
+    doGroup.win = this.win(doCards.sort(), null, options.jokerWin);
     if(!options.omit){
-        doGroup.bkong = this.kong(doCards);     //black kong 暗杠
+        doGroup.bKong = this.kong(doCards);     //black kong 暗杠
         if(options.bCards && options.bCards.length > 0){
             options.bCards.forEach(function(b){
                 if(b.length === 3 && b[0] === b[1])doCards = doCards.concat(b);
             });
-            let w = difference(this.kong(doCards.sort()), doGroup.bkong);   //white kong 明杠
-            if(w.length > 0)doGroup.wkong = w;
+            let w = difference(this.kong(doCards.sort()), doGroup.bKong);   //white kong 明杠
+            if(w.length > 0)doGroup.wKong = w;
         }
     }
     return _.omit(doGroup, (value) => !value);
@@ -155,7 +157,8 @@ handle.selfCanDo = function(options){
  * player discard others can do action
  * @param hCards    hand cards
  * @param discard
- * @returns {win: boolean, kong: array, ...}  (胡 ， 杠 ， 碰， 吃)
+ * @param omit
+ * @returns {Object} {win: boolean, kong: array, ...}  (胡 ， 杠 ， 碰， 吃)
  */
 handle.canDo = function(hCards, discard, omit){
     let doGroup = {}, me = this;
@@ -175,35 +178,36 @@ handle.canDo = function(hCards, discard, omit){
  */
 handle.doAction = function(hCards, cards, discard){
     if(!cards)return hCards;
-    let tcards = _.clone((_.isArray(cards) ? cards : [cards]));
+    let tCards = _.clone((_.isArray(cards) ? cards : [cards]));
     let doCards = [];
     let flag = 0;
 
-    discard && tcards.splice(_.indexOf(cards, discard), 1);
-    tcards.sort();
+    discard && tCards.splice(_.indexOf(cards, discard), 1);
+    tCards.sort();
     for(let i in hCards){
-        if(hCards[i] === tcards[flag] && flag < tcards.length){
+        if(hCards[i] === tCards[flag] && flag < tCards.length){
             flag++;
             continue;
         }
         doCards.push(hCards[i]);
     }
-    return flag === tcards.length ? this.sort(doCards) : false;
+    return flag === tCards.length ? this.sort(doCards) : false;
 };
 
 /**
  * win  1. 先确定对子（将） 2. 字 三连（剩余癞子数） 3. 筒子三连
- * @param hand cards
- * @param discard
- * @returns Array [{wcards: [胡牌组合], map: [飞转换的牌]}]
+ * @param hCards    hand cards
+ * @param card      player discard
+ * @param jWin      joker win
+ * @returns Array [{wCards: [胡牌组合], map: [飞转换的牌]}]
  */
-handle.win = function (hCards, card, jwin) {
+handle.win = function (hCards, card, jWin) {
     let cards = card ? hCards.concat(card) : hCards;
     let group = _.groupBy(cards.sort(), (c) =>{return c.substr(0, 1);});
     let jacks = group['A'] && group['A'].length || 0, doubles = [];
 
-    if (jwin && jacks === 4) {    //首轮四飞 直接胡
-        return [{wcards: [hCards], map: [], jwin: true}];
+    if (jWin && jacks === 4) {    //首轮四飞 直接胡
+        return [{wCards: [hCards], map: [], jWin: true}];
     }
 
     for (let i = 0; i < cards.length; i++) {
@@ -231,18 +235,17 @@ handle.win = function (hCards, card, jwin) {
             map.push(double[0]);
             j--;
         }
-        if (ca.length === 0)return combs.push({wcards: [double], map: map});
+        if (ca.length === 0)return combs.push({wCards: [double], map: map});
 
         let g = _.groupBy(ca, c => {
             return c.substr(0, 1);
         });
-
         let font = fontThree((g['W'] || []).concat(g['S'] || []), j, map);
         if (font) {
             let three = jackThree(g['D'], font.jacks, map);
             if (three) {
                 let t = three.concat(font.three).filter(Boolean);
-                (t.length === Math.floor(cards.length / 3)) && t.push(double) && combs.push({wcards: t, map: map});
+                (t.length === Math.floor(cards.length / 3)) && t.push(double) && combs.push({wCards: t, map: map});
             }
         }
     });
@@ -275,7 +278,7 @@ handle.kong = function (h, discard) {
 
 /**
  * pong(碰)
- * @param hand cards  (had sort)
+ * @param hCards    hand cards  (had sort)
  * @param discard
  * @returns {Boolean | Array}
  */

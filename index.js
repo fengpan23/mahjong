@@ -35,8 +35,7 @@ class Index {
             if(action === 'discard')
                 params.discard = player.get('hCards').slice(-1)[0];
 
-            let req = this._server.createRequest(player, action, params);
-            this[action](req, player);
+            this[action](this._server.createRequest(player, action, params), player);
         }).on('auto', index => {
             let player = this._server.getPlayers({index: index});
             this._server.broadcast('userstate', {game: {seatindex: index, state: player.set('state', -1)}});
@@ -53,7 +52,7 @@ class Index {
                         if (res.action === 'win')
                             return this._win(res, {kWin: result.sid});
                         player.set('hCards', Handle.doAction(player.get('hCards'), result.cards[0]));
-                        handleKong(client, result);
+                        handleKong(player, result);
                     });
                     players.forEach(player => {
                         if (player.index === result.sid) return;
@@ -190,15 +189,12 @@ class Index {
 
     _start() {
         Log.info('... game start ...');
-
-        this._server.open({retry: 3}).then(players => {
-
-            let dies = Handle.throwdie(3);      //throw 3 die
+        this._server.open({retry: 3}).then(() => {
+            let dies = Handle.throwDie(3);      //throw 3 die
             let dirMap = Game.randomEast(dies[0]);    //get east
             let sta = dies[1] + dies[2];
 
             Game.shuffle();         //new game shuffle cards
-
             this._dealCards(sta, {die: Handle.dealDie(dies), dirmap: dirMap, actionseatindex: Game.getIndex('east'), actiontimeout: Timeout.discard});
         }).catch(e => {
             Log.error('game open error !', e);
@@ -213,73 +209,69 @@ class Index {
      */
     _dealCards(sta, die){
         Log.info('... deal cards ...');
-        try {
-            let r = {}, b = {}, actions = ['discard'], f = 0;
-            let players = this._server.players;
-            players.sort((a, b) => Game.huge(a.index) - Game.huge(b.index));
+        let r = {}, b = {}, actions = ['discard'], f = 0;
+        let players = this._server.players;
+        players.sort((a, b) => Game.huge(a.index) - Game.huge(b.index));
 
-            players.forEach((player, i) => {
-                let res = {}, boc = {};
-                let num = Game.isEast(player.index) ? 14 : 13;
-                let repaired = Game.repairCard(Game.dealCard(num, false, sta));     //deal card =>//repair flower // sort
-                player.set('hCards', res.hcards = repaired.cards);
-                player.set('fCards', res.fcards = repaired.fcards);
-                player.set('bCards', []);
-                res.repaired = repaired.repaired;
+        players.forEach((player, i) => {
+            let res = {}, boc = {};
+            let num = Game.isEast(player.index) ? 14 : 13;
+            let repaired = Game.repairCard(Game.dealCard(num, false, sta));     //deal card =>//repair flower // sort
+            player.set('hCards', res.hcards = repaired.cards);
+            player.set('fCards', res.fcards = repaired.fcards);
+            player.set('bCards', []);
+            res.repaired = repaired.repaired;
 
-                f += res.fcards.length || 0;
+            f += res.fcards.length || 0;
 
-                let options = _.extend({dir: Game.getDir(player.index), jokerWin: true}, player.get(['hCards', 'fCards']));
-                let operate;
-                if(Game.isEast(player.index)){
-                    options.godWin = true;
-                    operate = Game.operate(options);
-                    if(operate && !operate.win){
-                        res.operate = operate;
-                        actions = actions.concat(Object.keys(operate))
-                    }
-                }else{
-                    options.omit = ['kong'];
-                    operate = Game.operate(options);
+            let options = _.extend({dir: Game.getDir(player.index), jokerWin: true}, player.get(['hCards', 'fCards']));
+            let operate;
+            if(Game.isEast(player.index)){
+                options.godWin = true;
+                operate = Game.operate(options);
+                if(operate && !operate.win){
+                    res.operate = operate;
+                    actions = actions.concat(Object.keys(operate))
                 }
-                if(operate && operate.win)player.set('win', true);
+            }else{
+                options.omit = ['kong'];
+                operate = Game.operate(options);
+            }
+            if(operate && operate.win)player.set('win', true);
 
-                boc.hcardnumber = res.hcards.length;
-                boc.fcards = res.fcards;    //use two-dimensional array（二位数组）
-                boc.tcards = res.tcards = Game.getTableCards(i === 2);
+            boc.hcardnumber = res.hcards.length;
+            boc.fcards = res.fcards;    //use two-dimensional array（二位数组）
+            boc.tcards = res.tcards = Game.getTableCards(i === 2);
 
-                r[player.index] = res;
-                b[player.index] = boc;
-            });
+            r[player.index] = res;
+            b[player.index] = boc;
+        });
 
-            let win = false;
-            players.forEach(player => {
-                let request = this._server.createRequest(player, 'dealcard'), sid = player.index;
-                if(!win && player.get('win')){
-                    win = true;
-                    request.once('afterClose', () => {
-                        setTimeout(() => {              //start god win and four joker win timer
-                            this._win({sid: sid}, {selfDrawn: true});
-                        }, Timeout.start * 1000);
-                    });
-                }else if(Game.isEast(sid)) {
-                    request.once('afterClose', () => {
-                        let t = Timeout.discard + Timeout.start + Timeout.repair * f;
-                        Round.setAction(sid, actions).setTimer(sid, t).startTimer(sid);
-                    });
-                }
-                request.response("game", {start: die, our: r[player.index], others: _.omit(b, player.index)});
-                request.close();
-            });
-        }catch(error){
-            Log.error('deal_cards_error', error);
-        }
+        let win = false;
+        players.forEach(player => {
+            let request = this._server.createRequest(player, 'dealcard'), sid = player.index;
+            if(!win && player.get('win')){
+                win = true;
+                request.once('afterClose', () => {
+                    setTimeout(() => {              //start god win and four joker win timer
+                        this._win({sid: sid}, {selfDrawn: true});
+                    }, Timeout.start * 1000);
+                });
+            }else if(Game.isEast(sid)) {
+                request.once('afterClose', () => {
+                    let t = Timeout.discard + Timeout.start + Timeout.repair * f;
+                    Round.setAction(sid, actions).setTimer(sid, t).startTimer(sid);
+                });
+            }
+            request.response("game", {start: die, our: r[player.index], others: _.omit(b, player.index)});
+            request.close();
+        });
     }
 
     /**
      * draw cards（抓牌或补牌）
-     * @param opt.sid   seatindex
-     * @param opt.kwin  boolean
+     * @param opt.sid   seat index
+     * @param opt.kWin  boolean
      * @param opt.card  String
      * @param opt.repair boolean
      * @param opt.time number
@@ -296,20 +288,20 @@ class Index {
             draw.reason = 1;
             player.get('fCards').push([opt.card]);
         }
-        options.kwin = opt.kwin && (draw.reason = 2);
+        options.kWin = opt.kWin && (draw.reason = 2);
 
         if (repair.fcards.length > 0){  //有补花
             options.fwin = true;        //win after get flower
             arr = arr.concat(_.flatten(repair.fcards));
             player.set('fCards', player.get('fCards').concat(repair.fcards))
         }
-        options.gcard = repair.cards[0];
+        options.gCard = repair.cards[0];
 
         let takeOff = false;
         player.get('bCards').forEach((bc, i) => {
             if(bc[2] === 'A1' && bc[0] === bc[1] && repair.cards[0] === bc[0]){  //take off（起飞）
                 bc[2] = repair.cards[0];
-                options.gcard = 'A1';
+                options.gCard = 'A1';
                 draw.flyinbcards = i;
                 takeOff = true;
             }
@@ -322,7 +314,7 @@ class Index {
         let actions = ['discard'], operate = Game.operate(options);     //player can do.
 
         if (operate){
-            actions = actions.concat(Object.keys(operate));
+            actions = actions.concat(Object.keys(operate).map(a => a.toLowerCase()));
             if (operate.win && !operate.win.cando) {
                 actions = _.without(actions, 'win');     //exclude can't win operate
             }
@@ -374,41 +366,26 @@ class Index {
     /**
      * do win
      * @param result
-     * @param options   {fire: sid}
+     * @param options   {Object}    {fire: sid}
      * @private
      */
     _win(result, options){
-        //console.info('do win params result and options ', result, options);
-        let clients = this.server.engine.getplayers(), broData = {hcards: {}}, fan, bill = [];
-        clients.forEach(cli => broData.hcards[cli.seatindex] = cli.session.hcards);
+        Log.info('do win params result and options ', result, options);
+        let players = this._server.players, broData = {};
+        broData.hcards = {};
+        players.forEach(p => broData.hcards[p.index] = p.get('hCards'));
 
-        let map = {selfdrawn: 2, fire: 3, kwin: 4};     //self drawn， fire(放炮)， kong_win(杠上开花,一人杠一人胡)
-        let info = broData.wininfo = game.getwin(result.sid);
-        //console.info('get win info : ', info);
+        let info = broData.wininfo = Game.getWin(result.sid);
+        this._point(Game.winBill(result, options, info)).then(res => {
+            Log.info('do point results: ', result);
 
-        if(options.kwin){        //a player kong，a player win(杠上开花 x4)
-            fan = info.fan * map.kwin;
-            let eid = _.without([1, 2, 3], options.kwin, result.sid)[0];
-            bill.push({sid: result.sid, fan: fan}, {sid: options.kwin, fan: -fan}, {sid: eid, fan: 0});
-        }else if(options.fire){     //some one fire
-            fan = info.fan * map.fire;
-            let eid = _.without([1, 2, 3], options.fire, result.sid)[0];
-            bill.push({sid: result.sid, fan: fan}, {sid: options.fire, fan: -fan}, {sid: eid, fan: 0});
-        }else if(options.selfdrawn){    //self drawn
-            fan = info.fan * map.selfdrawn;
-            let lids = _.without([1, 2, 3], result.sid);
-            bill.push({sid: result.sid, fan: fan * 2});
-            lids.forEach(id => bill.push({sid: id, fan: -fan}));
-        }
-
-        this._dopoint(bill).then(res => {
-            //console.info('do point results: ', result);
+            broData.wininfo = Game.getWin(result.sid);
             broData.user = res;
             broData.readytimeout = Timeout.ready;
             broData.actionseatindex = result.sid;
-            this.server.broadcast('win', {game: broData});
+            this._server.broadcast('win', {game: broData});
             this._over(true);
-        }).catch(error => console.error('error', 'do_win_point_error', error));
+        }).catch(error => Log.error('do_win_point_error', error));
     }
 
     /**
@@ -416,49 +393,20 @@ class Index {
      * @private
      * @param player
      * @param result
-     * @returns {r: Object, b: Object}
+     * @returns  {Object}   {r: Object, b: Object}
      */
     _kong(player, result){
-        //console.info('do kong params result: ', result);
-        let r = {}, b = {}, bill = [], bCards = player.get('bCards');
-        switch (result.action){
-            case 'kong':    //碰杠
-                result.cards[3] = 'kong';
-                bCards.push(result.cards);
-                bill.push({sid: result.sid, fan: 10}, {sid: result.discardid, fan: -10});
-                break;
-            case 'bKong':   //自摸暗杠
-                result.cards[3] = result.action.toLowerCase();
-                bCards.push(result.cards);
+        Log.info('do kong result params: ', result);
+        let bCards = player.get('bCards');
 
-                bill.push({sid: result.sid, fan: 20});
-                [1, 2, 3].forEach(sid => {
-                    if(sid === result.sid)return;
-                    bill.push({sid: sid, fan: -10});
-                });
-                break;
-            case 'wKong':   //自摸明杠
-                bill.push({sid: result.sid, fan: 10});
-                [1, 2, 3].forEach(sid => {
-                    if(sid === result.sid)return;
-                    bill.push({sid: sid, fan: -5});
-                });
-                for(let bc of bCards){
-                    if(bc[0] === result.cards[0]){
-                        bc.push(result.action.toLowerCase());
-                        break;
-                    }
-                }
-                break;
-        }
-
-        r.bcards = b.bcards = bCards;
-        r.hcards = player.get('hCards');
-        b.hcardnumber = r.hcards.length;
-        b.actiontimeout = r.actiontimeout = Timeout.action;
-        b.actionseatindex = client.seatindex;
-        return this._point(bill).then(result => {
+        return this._point(Game.kongBill(result, bCards)).then(result => {
             //console.info('kong do point result: ', result);
+            let r = {}, b = {};
+            r.bcards = b.bcards = bCards;
+            r.hcards = player.get('hCards');
+            b.hcardnumber = r.hcards.length;
+            b.actiontimeout = r.actiontimeout = Timeout.action;
+            b.actionseatindex = player.index;
             r.user = b.user = result;
             return Promise.resolve({r: r, b: b});
         });
@@ -473,7 +421,7 @@ class Index {
             bGame.hcards = {};
             players.forEach(player => bGame.hcards[player.seatindex] = player.get('hCards'));
             setTimeout(() => {
-                this.server.broadcast('win', {game: bGame});
+                this._server.broadcast('win', {game: bGame});
             }, 2000);
         }
 
@@ -498,32 +446,24 @@ class Index {
 
     /**
      * do point
-     * @param bill 输赢[{sid: point}, {sid: -point}]
+     * @param bills 输赢[{sid: point}, {sid: -point}]
      * @private
      */
-    _point(bill){
-        Log.info('do point bill : ', bill);
-        let engine = this.server.engine, clients = engine.getplayers(), pro = engine.propertyget('gameprofile'), result = {};
-
-        bill.sort((a, b) => a.fan - b.fan);  //do lose before do win(先做输钱 后做赢钱)
+    _point(bills){
+        Log.info('do point bills : ', bills);
+        bills.sort((a, b) => a.fan - b.fan);     //do lose before do win(先做输钱 后做赢钱)
         return new Promise((resolve, reject) => {
-            async.forEachOfSeries(bill, (bunko, key, callback) => {
-                let _do = bunko.fan > 0 ? 'win' : 'bet';
-                let client = _.findWhere(clients, {seatindex: bunko.sid});
-                client.createreqwithdbc('point').then(req => {
-                    let point = pro.minbet * bunko.fan;
-                    point = point > 0 ? profile.poolratiocurrentcount(point) : point;
+            let table = this._server.get('table'), result = {};
+            async.forEachOfSeries(bills, (bill, key, callback) => {
+                let _do = bill.fan > 0 ? 'win' : 'bet';
+                let player = this._server.getPlayers({index: bill.sid});
+                let point = table.minbet * bill.fan;
 
-                    console.log(client.seatindex + ' do ' + _do + ' => ' + point);
-                    engine[_do](req, point).then(() => {
-                        client.session.point += point;
-                        result[bunko.sid] = {point: client.session.point, win: point};
-                        req.once('afterclose', callback);
-                        req.close();
-                    }).catch(e => {
-                        e => wrong.wronghandler(e, req.error, ()=> req.error('error', 'unexpected_error', e.stack), req.close)
-                        callback(e);
-                    });
+                this._deposit[_do](player, point).then(res => {
+                    Log.debug(player.index + ' do ' + _do + ' res => ' + res);
+
+                    result[bill.sid] = {point: player.balance, win: point};
+                    callback();
                 });
             }, err => {
                 if(err)return reject(err);
@@ -620,7 +560,7 @@ class Index {
                     }, player.get(['hCards', 'bCards', 'fCards'])));
 
                     if (operate) {
-                        console.info('seat index ', player.index, ' can do operate:', operate);
+                        Log.info('seat index ', player.index, ' can do operate:', operate);
                         let actions = Object.keys(operate).filter(Boolean);
                         if (operate.win && !operate.win.cando)actions = _.without(actions, 'win');
                         operate.actiontimeout = Timeout.action;
@@ -650,15 +590,13 @@ class Index {
     /**
      * api player win game
      */
-    win(request) {
-        let sid = request.seatindex(), hcards = request.propertyget('session').hcards;
-        console.info('seat index ', sid, ' win ');
-
-        if(Round.verify(sid, 'win')) {
-            if(Handle.win(hcards)){     //自摸
-                round.selfdeclare(sid, 'win');
+    win(request, player) {
+        Log.info('seat index ', player.index, ' win ');
+        if(Round.verify(player.index, 'win')) {
+            if(Handle.win(player.get('hCards'))){     //自摸
+                Round.selfDeclare(player.index, 'win');
             }else{
-                round.declare(sid, 'win');
+                Round.declare(player.index, 'win');
             }
         }
         request.close();
@@ -672,7 +610,7 @@ class Index {
         if (!cards)return request.close();
 
         let card = cards[0];
-        console.info('seat index ', player.index, ' kong ', cards);
+        Log.info('seat index ', player.index, ' kong ', cards);
         let length = function (cards, card) {
             let len = 0;
             _.flatten(cards).forEach(c => { card === c && len++;});
@@ -746,32 +684,30 @@ class Index {
     /**
      * api user quit
      * @param request
+     * @param player
      */
-    userquit(request){
-        let sid =  request.seatindex();
-        if (!sid)return;
-        console.info(sid, ' ... user quit !!! ...');
-        let b = {seatindex: sid};
-        request.action = 'quit';
-        if (game.state() !== 1) {     //game not start, leave player quit
-            this._doquit(sid).then(() => {
+    userquit(request, player){
+        Log.info('... user quit ...');
+        let b = {seatindex: player.index};
+        if (Game.state !== 1) {     //game not start, leave player quit
+            this._quit(sid).then(() => {
                 b.state = 2;
-                this.server.broadcast('broadcast_userquit', {game: b});
-            }).catch(err => request.error('error', 'do quit error', err));
+                this._server.broadcast('broadcast_userquit', {game: b});
+            }).catch(err => request.error('do_quit_error', err));
         }else{
-            round.state(sid, 'auto');
-            request.propertyget('session').state = b.state = -1;   //auto keep request alive save quit state
-            this.server.broadcast('userstate', {game: b});
+            Round.state(player.index, 'auto');
+            player.set('state', b.state = -1);      //auto keep request alive save quit state
+            this._server.broadcast('userstate', {game: b});
         }
         request.close();
-    };
+    }
 
     /**
      * api reconnect
      */
     reconnect(request){
         let sid = request.seatindex(), server = this.server;
-        console.info(sid, '.......... reconnect .........');
+        Log.info(sid, '.......... reconnect .........');
 
         let players = server.engine.getplayers(), sync = {users: {}, tcards: game.gettablecards(round.times() === 0), dirmap: game.getdir(), die: handle.dealdie(handle.throwdie())};
         let countdown = round.setTimer(sid, -1);
@@ -792,25 +728,21 @@ class Index {
         request.on('afterClose', () => server.broadcast('userstate', {game: {seatindex: sid, state: 3}}));
         request.respone('sync', sync);
         request.close();
-    };
+    }
 
     disconnect(player) {
         Log.info('... api disconnect ...');
         this._server.quit(player).then(p => {
+            Log.info('player quit success ' + p.index);
             let data = {index: player.index, state: 2};
             this._server.broadcast('disconnect', {game: data});
         }).catch(e => {
             Log.error('disconnect player quit error: ', e);
         });
-    };
+    }
 
-    exit() {
-        console.info('--- mahjong exit ---');
+    exit(){
         return Promise.resolve();
-    };
-
-    exceptionhandle(err) {
-        console.error('exception handle', err);
-    };
+    }
 }
 new Index();

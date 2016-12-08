@@ -7,6 +7,7 @@ const config = require('../config/mahjong');
 const M = config.card;
 
 const DIR_LIST = ['east', 'south', 'west'];
+const MULTIPLE = {selfDawn: 2, fire: 3, kWin: 4};       //self drawn， fire(放炮)， kong_win(杠上开花,一人杠一人胡)
 
 function fan(combs, bCards, addition){
     let order = [];
@@ -160,7 +161,8 @@ class Game {
                 m = m.concat(Object.keys(M[ma].cards));
             }
         }
-        return this._cards = _.shuffle(m);
+        return this._cards = m;
+        // return this._cards = _.shuffle(m);
     };
 
     /**
@@ -260,21 +262,80 @@ class Game {
         }else{
             canDo = Handle.selfCanDo(_.pick(options, 'hCards', 'bCards', 'gCard', 'jokerWin', 'omit')); //首轮四飞 直接胡
         }
-        //console.info('operate can do: ', canDo);
         if (canDo.win) {        //if win , get fan
             let addition = _.pick(options, 'gCard', 'discard', 'fCards', 'dir', 'kWin', 'fWin', 'robWin', 'godWin', 'dieWin');
             let bestWin = fan(canDo.win, options.bCards, addition);
             let canWin = bestWin.fan >= 5;
             if (canWin) {
                 if (bestWin.fan >= 10)bestWin.fan = 20;
-                bestWin.wCards = (options.bcards || []).concat(bestWin.wCards);
-                this._winMap.set(options.dir, _.pick(bestWin, 'fan', 'type', 'wCards'));
+                let info = _.pick(bestWin, 'fan', 'type');
+                info.wcards = (options.bcards || []).concat(bestWin.wCards);
+                this._winMap.set(options.dir, info);
             }
             canDo.win = _.pick(bestWin, 'fan', 'type');
             canDo.win.cando = canWin;
         }
         return !_.isEmpty(canDo) && canDo;
     };
+
+    winBill(result, options, info){
+        let bills = [], fan = 0;
+        if(options.kWin){        //a player kong，a player win(杠上开花 x4)
+            fan = info.fan * MULTIPLE.kWin;
+            let eid = _.without([1, 2, 3], options.kWin, result.sid)[0];
+            bills.push({sid: result.sid, fan: fan}, {sid: options.kWin, fan: -fan}, {sid: eid, fan: 0});
+        }else if(options.fire){     //some one fire
+            fan = info.fan * MULTIPLE.fire;
+            let eid = _.without([1, 2, 3], options.fire, result.sid)[0];
+            bills.push({sid: result.sid, fan: fan}, {sid: options.fire, fan: -fan}, {sid: eid, fan: 0});
+        }else if(options.selfDrawn){    //self drawn
+            fan = info.fan * MULTIPLE.selfDrawn;
+            let lids = _.without([1, 2, 3], result.sid);
+            bills.push({sid: result.sid, fan: fan * 2});
+            lids.forEach(id => bills.push({sid: id, fan: -fan}));
+        }
+        return bills;
+    }
+
+    /**
+     * get kong bill and do update bright cards
+     * @param result
+     * @param bCards
+     */
+    kongBill(result, bCards){
+        let  bills = [];
+        switch (result.action){
+            case 'kong':     //碰杠
+                result.cards[3] = 'kong';
+                bCards.push(result.cards);
+                bills.push({sid: result.sid, fan: 10}, {sid: result.discardid, fan: -10});
+                break;
+            case 'bKong':   //自摸暗杠
+                result.cards[3] = result.action.toLowerCase();
+                bCards.push(result.cards);
+
+                bills.push({sid: result.sid, fan: 20});
+                [1, 2, 3].forEach(sid => {
+                    if(sid === result.sid)return;
+                    bills.push({sid: sid, fan: -10});
+                });
+                break;
+            case 'wKong':   //自摸明杠
+                bills.push({sid: result.sid, fan: 10});
+                [1, 2, 3].forEach(sid => {
+                    if(sid === result.sid)return;
+                    bills.push({sid: sid, fan: -5});
+                });
+                for(let bc of bCards){
+                    if(bc[0] === result.cards[0]){
+                        bc.push(result.action.toLowerCase());
+                        break;
+                    }
+                }
+                break;
+        }
+        return bills
+    }
 }
 
 module.exports = new Game();
@@ -282,5 +343,5 @@ module.exports = new Game();
 //test
 if (require.main !== module) return;
 let g = new Game();
-let o = g.operate({gCard: 'W1', hCards: ['D6', 'D6', 'D6', 'D7', 'D7', 'A1', 'D4', 'D4'], bCards: [['W1', 'W1', 'W1'], ['A1', 'D3', 'D3']], fCards: ['A1']});
+let o = g.operate({gCard: 'W1', hCards: ['D6', 'D6', 'D6', 'D7', 'D7', 'A1', 'D4', 'D4', 'D4',  'D7'], bCards: [['W1', 'W1', 'W1'], ['A1', 'D3', 'D3']], fCards: ['A1']});
 console.log(o);
