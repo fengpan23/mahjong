@@ -189,7 +189,7 @@ class Index {
 
     _start() {
         Log.info('... game start ...');
-        this._server.open({retry: 3}).then(players => {
+        this._server.open({retry: 3}).then(() => {
             let dies = Handle.throwDie(3);      //throw 3 die
             let dirMap = Game.randomEast(dies[0]);    //get east
             let sta = dies[1] + dies[2];
@@ -684,22 +684,20 @@ class Index {
     /**
      * api user quit
      * @param request
+     * @param player
      */
     userquit(request, player){
         Log.info('... user quit ...');
-        let sid =  request.seatindex();
-        if (!sid)return;
-        let b = {seatindex: sid};
-        request.action = 'quit';
-        if (game.state() !== 1) {     //game not start, leave player quit
-            this._doquit(sid).then(() => {
+        let b = {seatindex: player.index};
+        if (Game.state !== 1) {     //game not start, leave player quit
+            this._quit(sid).then(() => {
                 b.state = 2;
-                this.server.broadcast('broadcast_userquit', {game: b});
-            }).catch(err => request.error('error', 'do quit error', err));
+                this._server.broadcast('broadcast_userquit', {game: b});
+            }).catch(err => request.error('do_quit_error', err));
         }else{
-            round.state(sid, 'auto');
-            request.propertyget('session').state = b.state = -1;   //auto keep request alive save quit state
-            this.server.broadcast('userstate', {game: b});
+            Round.state(player.index, 'auto');
+            player.set('state', b.state = -1);      //auto keep request alive save quit state
+            this._server.broadcast('userstate', {game: b});
         }
         request.close();
     }
