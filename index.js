@@ -1,4 +1,5 @@
 "use strict";
+process.env.NODE_ENV = 'staging';
 const _ = require('underscore');
 const async = require('async');
 const Handle = require('./libs/handle');
